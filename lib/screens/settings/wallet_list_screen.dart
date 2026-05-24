@@ -36,15 +36,16 @@ class _WalletListScreenState extends State<WalletListScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      body: RefreshIndicator(
-        onRefresh: widget.transactionVM.refresh,
-        child: CustomScrollView(
-          physics: const AlwaysScrollableScrollPhysics(),
-          slivers: [
+      body: CustomScrollView(
+        physics: const AlwaysScrollableScrollPhysics(),
+        slivers: [
           SliverAppBar(
             title: const Text('Wallets', style: TextStyle(fontSize: 28, fontWeight: FontWeight.bold, letterSpacing: -1.0)),
             pinned: true,
             centerTitle: false,
+          ),
+          CupertinoSliverRefreshControl(
+            onRefresh: widget.transactionVM.refresh,
           ),
           SliverToBoxAdapter(
             child: Padding(
@@ -186,7 +187,6 @@ class _WalletListScreenState extends State<WalletListScreen> {
             ),
           ),
         ],
-      ),
       ),
       floatingActionButton: FloatingActionButton(
         onPressed: _showAddWalletSheet,

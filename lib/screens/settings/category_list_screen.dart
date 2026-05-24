@@ -24,15 +24,16 @@ class CategoryListScreen extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      body: RefreshIndicator(
-        onRefresh: transactionVM.refresh,
-        child: CustomScrollView(
-          physics: const AlwaysScrollableScrollPhysics(),
-          slivers: [
+      body: CustomScrollView(
+        physics: const AlwaysScrollableScrollPhysics(),
+        slivers: [
           SliverAppBar(
             title: const Text('Categories', style: TextStyle(fontSize: 28, fontWeight: FontWeight.bold, letterSpacing: -1.0)),
             pinned: true,
             centerTitle: false,
+          ),
+          CupertinoSliverRefreshControl(
+            onRefresh: transactionVM.refresh,
           ),
           SliverToBoxAdapter(
             child: Padding(
@@ -156,7 +157,6 @@ class CategoryListScreen extends StatelessWidget {
             ),
           ),
         ],
-      ),
       ),
       floatingActionButton: FloatingActionButton(
         onPressed: () => _showAddCategoryDialog(context),

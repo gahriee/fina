@@ -51,15 +51,16 @@ class _SettingsScreenState extends State<SettingsScreen> {
         final user = widget.authVM.currentUser;
 
         return Scaffold(
-          body: RefreshIndicator(
-            onRefresh: widget.transactionVM.refresh,
-            child: CustomScrollView(
-              physics: const AlwaysScrollableScrollPhysics(),
-              slivers: [
+          body: CustomScrollView(
+            physics: const AlwaysScrollableScrollPhysics(),
+            slivers: [
               SliverAppBar(
                 title: const Text('Settings', style: TextStyle(fontSize: 28, fontWeight: FontWeight.bold, letterSpacing: -1.0)),
                 pinned: true,
                 centerTitle: false,
+              ),
+              CupertinoSliverRefreshControl(
+                onRefresh: widget.transactionVM.refresh,
               ),
               SliverToBoxAdapter(
                 child: Padding(
@@ -225,7 +226,6 @@ class _SettingsScreenState extends State<SettingsScreen> {
                 ),
               ),
             ],
-          ),
           ),
         );
       },

@@ -44,15 +44,16 @@ class _TransactionListScreenState extends State<TransactionListScreen> {
         }).toList();
 
         return Scaffold(
-          body: RefreshIndicator(
-            onRefresh: widget.transactionVM.refresh,
-            child: CustomScrollView(
-              physics: const AlwaysScrollableScrollPhysics(),
-              slivers: [
+          body: CustomScrollView(
+            physics: const AlwaysScrollableScrollPhysics(),
+            slivers: [
               SliverAppBar(
                 title: const Text('Transactions', style: TextStyle(fontSize: 28, fontWeight: FontWeight.bold, letterSpacing: -1.0)),
                 pinned: true,
                 centerTitle: false,
+              ),
+              CupertinoSliverRefreshControl(
+                onRefresh: widget.transactionVM.refresh,
               ),
               SliverToBoxAdapter(
                 child: Padding(
@@ -187,7 +188,6 @@ class _TransactionListScreenState extends State<TransactionListScreen> {
                     ),
                   ),
             ],
-          ),
           ),
           floatingActionButton: FloatingActionButton(
             onPressed: () => _showAddSheet(context),
