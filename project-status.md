@@ -48,3 +48,8 @@
 - [ ] Test auth flows and session handling (Manual via QA Playbook)
 - [x] UI Polish (Ensured iOS/Apple-native aesthetic compliance & Scroll Physics)
 - [ ] Final device testing (iOS & Android)
+
+## 🚀 Phase 7: Advanced Features
+- [x] **Budgets:** Implement `Budget` model, `BudgetService`, and budget tracking UI in Reports.
+- [x] **Wallets:** Implement `Wallet` model, multiple accounts support, and wallet selection UI.
+- [x] **Export:** Implement CSV export functionality in the Settings screen.

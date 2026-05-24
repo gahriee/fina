@@ -26,7 +26,7 @@ class TransactionTile extends StatelessWidget {
   Widget build(BuildContext context) {
     return ListTile(
       onTap: onTap,
-      leading: CategoryIcon(icon: category.icon, type: category.type),
+      leading: CategoryIcon(icon: category.icon, type: category.type, colorHex: category.colorHex),
       title: Text(
         transaction.note?.isNotEmpty == true ? transaction.note! : category.name,
         style: const TextStyle(fontWeight: FontWeight.w600),

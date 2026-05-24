@@ -3,7 +3,9 @@ import 'package:flutter/cupertino.dart';
 import '../../viewmodels/transaction_viewmodel.dart';
 import '../../viewmodels/auth_viewmodel.dart';
 import '../../models/models.dart';
+import '../../services/export_service.dart';
 import 'category_list_screen.dart';
+import 'wallet_list_screen.dart';
 
 class SettingsScreen extends StatefulWidget {
   final TransactionViewModel transactionVM;
@@ -21,6 +23,8 @@ class SettingsScreen extends StatefulWidget {
 
 class _SettingsScreenState extends State<SettingsScreen> {
   final _currencyCtrl = TextEditingController();
+  final _exportService = ExportService();
+  bool _isExporting = false;
 
   @override
   void initState() {
@@ -50,90 +54,219 @@ class _SettingsScreenState extends State<SettingsScreen> {
         final user = widget.authVM.currentUser;
 
         return Scaffold(
-          appBar: AppBar(
-            title: const Text('Settings'),
-          ),
-          body: ListView(
-            padding: const EdgeInsets.all(16.0),
-            children: [
-              const Text('Preferences', style: TextStyle(fontWeight: FontWeight.bold, color: Colors.grey)),
-              const SizedBox(height: 8),
-              TextField(
-                controller: _currencyCtrl,
-                decoration: const InputDecoration(labelText: 'Currency Symbol'),
-                onChanged: (_) => _updateSettings(),
+          body: CustomScrollView(
+            slivers: [
+              SliverAppBar(
+                title: const Text('Settings', style: TextStyle(fontSize: 28, fontWeight: FontWeight.bold, letterSpacing: -1.0)),
+                pinned: true,
+                centerTitle: false,
               ),
-              const SizedBox(height: 16),
-              const Text('Appearance', style: TextStyle(fontSize: 12)),
-              const SizedBox(height: 8),
-              SegmentedButton<AppThemeMode>(
-                segments: const [
-                  ButtonSegment(value: AppThemeMode.system, label: Text('System')),
-                  ButtonSegment(value: AppThemeMode.light, label: Text('Light')),
-                  ButtonSegment(value: AppThemeMode.dark, label: Text('Dark')),
-                ],
-                selected: {settings.themeMode},
-                onSelectionChanged: (set) {
-                  final s = settings.copyWith(themeMode: set.first);
-                  widget.transactionVM.updateSettings(user!.uid, s);
-                },
-              ),
-              const SizedBox(height: 32),
-              const Text('Data', style: TextStyle(fontWeight: FontWeight.bold, color: Colors.grey)),
-              const SizedBox(height: 8),
-              ListTile(
-                title: const Text('Manage Categories'),
-                trailing: const Icon(CupertinoIcons.chevron_right),
-                onTap: () {
-                  Navigator.push(
-                    context,
-                    MaterialPageRoute(
-                      builder: (_) => CategoryListScreen(transactionVM: widget.transactionVM),
-                    ),
-                  );
-                },
-              ),
-              ListTile(
-                title: const Text('Clear All Data', style: TextStyle(color: Colors.red)),
-                onTap: () {
-                  showDialog(
-                    context: context,
-                    builder: (ctx) => AlertDialog(
-                      title: const Text('Clear All Data?'),
-                      content: const Text('This will delete all transactions and reset categories. This action cannot be undone.'),
-                      actions: [
-                        TextButton(
-                          onPressed: () => Navigator.pop(ctx),
-                          child: const Text('Cancel'),
-                        ),
-                        TextButton(
-                          onPressed: () {
-                            widget.transactionVM.clearAllData(user!.uid);
-                            Navigator.pop(ctx);
-                          },
-                          child: const Text('Clear', style: TextStyle(color: Colors.red)),
-                        ),
-                      ],
-                    ),
-                  );
-                },
-              ),
-              const SizedBox(height: 32),
-              const Text('Account', style: TextStyle(fontWeight: FontWeight.bold, color: Colors.grey)),
-              const SizedBox(height: 8),
-              ListTile(
-                leading: const Icon(CupertinoIcons.person),
-                title: Text(user?.email ?? 'Unknown User'),
-              ),
-              ListTile(
-                leading: const Icon(CupertinoIcons.square_arrow_right),
-                title: const Text('Log Out'),
-                onTap: () => widget.authVM.logout(),
+              SliverToBoxAdapter(
+                child: Padding(
+                  padding: const EdgeInsets.symmetric(vertical: 8.0),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.stretch,
+                    children: [
+                      _buildSectionHeader('Preferences'),
+                      _buildGroupContainer(
+                        context,
+                        children: [
+                          Padding(
+                            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+                            child: Row(
+                              children: [
+                                const Text('Currency Symbol', style: TextStyle(fontSize: 16)),
+                                const SizedBox(width: 16),
+                                Expanded(
+                                  child: DropdownButtonHideUnderline(
+                                    child: DropdownButton<String>(
+                                      value: settings.currencySymbol,
+                                      isExpanded: true,
+                                      alignment: Alignment.centerRight,
+                                      icon: const Icon(CupertinoIcons.chevron_up_chevron_down, size: 16),
+                                      style: TextStyle(fontSize: 16, color: Theme.of(context).colorScheme.primary, fontWeight: FontWeight.bold),
+                                      items: () {
+                                        const currencyNames = {
+                                          '\$': 'USD (\$)',
+                                          '€': 'EUR (€)',
+                                          '£': 'GBP (£)',
+                                          '¥': 'JPY (¥)',
+                                          '₱': 'PHP (₱)',
+                                          '₹': 'INR (₹)',
+                                          '₩': 'KRW (₩)',
+                                          '₽': 'RUB (₽)',
+                                        };
+                                        final keys = { ...currencyNames.keys, settings.currencySymbol };
+                                        return keys.map((c) => DropdownMenuItem(
+                                          value: c, 
+                                          child: Text(currencyNames[c] ?? c, textAlign: TextAlign.right),
+                                        )).toList();
+                                      }(),
+                                      onChanged: (val) {
+                                        if (val != null) {
+                                          final s = settings.copyWith(currencySymbol: val);
+                                          widget.transactionVM.updateSettings(user!.uid, s);
+                                        }
+                                      },
+                                    ),
+                                  ),
+                                ),
+                              ],
+                            ),
+                          ),
+                          _buildDivider(context),
+                          Padding(
+                            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+                            child: Column(
+                              crossAxisAlignment: CrossAxisAlignment.stretch,
+                              children: [
+                                const Text('Appearance', style: TextStyle(fontSize: 16)),
+                                const SizedBox(height: 12),
+                                CupertinoSlidingSegmentedControl<AppThemeMode>(
+                                  groupValue: settings.themeMode,
+                                  backgroundColor: Theme.of(context).colorScheme.surfaceContainerHighest.withValues(alpha: 0.3),
+                                  thumbColor: Theme.of(context).colorScheme.surface,
+                                  children: const {
+                                    AppThemeMode.system: Padding(padding: EdgeInsets.symmetric(vertical: 8), child: Text('System')),
+                                    AppThemeMode.light: Padding(padding: EdgeInsets.symmetric(vertical: 8), child: Text('Light')),
+                                    AppThemeMode.dark: Padding(padding: EdgeInsets.symmetric(vertical: 8), child: Text('Dark')),
+                                  },
+                                  onValueChanged: (val) {
+                                    if (val != null) {
+                                      final s = settings.copyWith(themeMode: val);
+                                      widget.transactionVM.updateSettings(user!.uid, s);
+                                    }
+                                  },
+                                ),
+                              ],
+                            ),
+                          ),
+                        ],
+                      ),
+                      const SizedBox(height: 24),
+                      _buildSectionHeader('Data'),
+                      _buildGroupContainer(
+                        context,
+                        children: [
+                          ListTile(
+                            title: const Text('Manage Categories'),
+                            trailing: const Icon(CupertinoIcons.chevron_right, size: 18, color: Colors.grey),
+                            onTap: () {
+                              Navigator.push(
+                                context,
+                                MaterialPageRoute(
+                                  builder: (_) => CategoryListScreen(transactionVM: widget.transactionVM),
+                                ),
+                              );
+                            },
+                          ),
+                          _buildDivider(context),
+                          ListTile(
+                            title: const Text('Manage Wallets'),
+                            trailing: const Icon(CupertinoIcons.chevron_right, size: 18, color: Colors.grey),
+                            onTap: () {
+                              Navigator.push(
+                                context,
+                                MaterialPageRoute(
+                                  builder: (_) => WalletListScreen(transactionVM: widget.transactionVM, userId: user!.uid),
+                                ),
+                              );
+                            },
+                          ),
+                          _buildDivider(context),
+                          ListTile(
+                            title: const Text('Export Transactions (CSV)'),
+                            trailing: _isExporting 
+                                ? const SizedBox(width: 24, height: 24, child: CircularProgressIndicator(strokeWidth: 2))
+                                : const Icon(CupertinoIcons.share, size: 18),
+                            onTap: () async {
+                              setState(() => _isExporting = true);
+                              final csv = _exportService.generateCsv(widget.transactionVM.transactions, widget.transactionVM.categories);
+                              await _exportService.shareCsv(csv, 'fina_transactions.csv');
+                              setState(() => _isExporting = false);
+                            },
+                          ),
+                          _buildDivider(context),
+                          ListTile(
+                            title: const Text('Clear All Data', style: TextStyle(color: Colors.red)),
+                            onTap: () {
+                              showDialog(
+                                context: context,
+                                builder: (ctx) => AlertDialog(
+                                  title: const Text('Clear All Data?'),
+                                  content: const Text('This will delete all transactions and reset categories. This action cannot be undone.'),
+                                  actions: [
+                                    TextButton(
+                                      onPressed: () => Navigator.pop(ctx),
+                                      child: const Text('Cancel'),
+                                    ),
+                                    TextButton(
+                                      onPressed: () {
+                                        widget.transactionVM.clearAllData(user!.uid);
+                                        Navigator.pop(ctx);
+                                      },
+                                      child: const Text('Clear', style: TextStyle(color: Colors.red)),
+                                    ),
+                                  ],
+                                ),
+                              );
+                            },
+                          ),
+                        ],
+                      ),
+                      const SizedBox(height: 24),
+                      _buildSectionHeader('Account'),
+                      _buildGroupContainer(
+                        context,
+                        children: [
+                          ListTile(
+                            title: Text(user?.email ?? 'Unknown User'),
+                            trailing: const Icon(CupertinoIcons.person, size: 20, color: Colors.grey),
+                          ),
+                          _buildDivider(context),
+                          ListTile(
+                            title: const Text('Log Out', style: TextStyle(color: Colors.red)),
+                            trailing: const Icon(CupertinoIcons.square_arrow_right, size: 20, color: Colors.red),
+                            onTap: () => widget.authVM.logout(),
+                          ),
+                        ],
+                      ),
+                      const SizedBox(height: 40),
+                    ],
+                  ),
+                ),
               ),
             ],
           ),
         );
       },
     );
+  }
+
+  Widget _buildSectionHeader(String title) {
+    return Padding(
+      padding: const EdgeInsets.only(left: 32, bottom: 8),
+      child: Text(
+        title.toUpperCase(),
+        style: const TextStyle(fontSize: 13, fontWeight: FontWeight.w600, color: Colors.grey, letterSpacing: 0.5),
+      ),
+    );
+  }
+
+  Widget _buildGroupContainer(BuildContext context, {required List<Widget> children}) {
+    return Container(
+      margin: const EdgeInsets.symmetric(horizontal: 20),
+      clipBehavior: Clip.antiAlias,
+      decoration: BoxDecoration(
+        color: Theme.of(context).colorScheme.surface,
+        borderRadius: BorderRadius.circular(20),
+        border: Border.all(color: Theme.of(context).colorScheme.surfaceContainerHighest.withValues(alpha: 0.5)),
+      ),
+      child: Column(children: children),
+    );
+  }
+
+  Widget _buildDivider(BuildContext context) {
+    return Divider(height: 1, indent: 16, color: Theme.of(context).colorScheme.surfaceContainerHighest.withValues(alpha: 0.5));
   }
 }

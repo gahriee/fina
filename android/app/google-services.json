@@ -12,7 +12,20 @@
           "package_name": "com.example.fina"
         }
       },
-      "oauth_client": [],
+      "oauth_client": [
+        {
+          "client_id": "999374234370-h0l8lde7t6er60jsbdfnvlgs87uvpn4c.apps.googleusercontent.com",
+          "client_type": 1,
+          "android_info": {
+            "package_name": "com.example.fina",
+            "certificate_hash": "3b2a08972ebc891b1af598ce6ca6e9da50b96a5d"
+          }
+        },
+        {
+          "client_id": "999374234370-bips00mog2vlsnbg3egk952qja2qcvb7.apps.googleusercontent.com",
+          "client_type": 3
+        }
+      ],
       "api_key": [
         {
           "current_key": "AIzaSyCMvKNxjuOvaWU7BkXpN0NNTgjIvUwMIwA"
@@ -20,7 +33,19 @@
       ],
       "services": {
         "appinvite_service": {
-          "other_platform_oauth_client": []
+          "other_platform_oauth_client": [
+            {
+              "client_id": "999374234370-bips00mog2vlsnbg3egk952qja2qcvb7.apps.googleusercontent.com",
+              "client_type": 3
+            },
+            {
+              "client_id": "999374234370-npbr2lif8pekl0nj4h7use524b08eqnr.apps.googleusercontent.com",
+              "client_type": 2,
+              "ios_info": {
+                "bundle_id": "com.example.fina"
+              }
+            }
+          ]
         }
       }
     }

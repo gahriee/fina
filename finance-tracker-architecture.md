@@ -31,6 +31,9 @@
 | 3   | Categories   | Simple labels for grouping transactions                       |
 | 4   | Reports      | Monthly spending breakdown by category                        |
 | 5   | Settings     | Currency symbol, theme, clear data                            |
+| 6   | Budgets      | Monthly spending limits per category with progress bars       |
+| 7   | Wallets      | Multiple accounts (e.g., Cash, Bank) with separate balances   |
+| 8   | Export       | Export transaction history to CSV format                      |
 
 ---
 

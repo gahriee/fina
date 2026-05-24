@@ -29,6 +29,7 @@ class _KitaAppState extends State<KitaApp> {
     return ListenableBuilder(
       listenable: _transactionVM,
       builder: (context, _) => MaterialApp(
+        debugShowCheckedModeBanner: false,
         title: 'Fina',
         theme: lightTheme,
         darkTheme: darkTheme,
@@ -45,6 +46,9 @@ class _KitaAppState extends State<KitaApp> {
               _transactionVM.listen(snapshot.data!.uid);
               return MainScreen(transactionVM: _transactionVM, authVM: _authVM);
             }
+            
+            // User is not logged in, clear any existing data
+            _transactionVM.clear();
             return AuthScreen(authVM: _authVM);
           },
         ),

@@ -2,14 +2,22 @@ import 'package:flutter/material.dart';
 import 'package:flutter/cupertino.dart';
 import '../../models/models.dart';
 import '../../viewmodels/transaction_viewmodel.dart';
-import 'package:firebase_auth/firebase_auth.dart';
+import '../../app/theme.dart';
 import '../../widgets/category_icon.dart';
+import '../../widgets/empty_state.dart';
 
-class CategoryListScreen extends StatelessWidget {
+class WalletListScreen extends StatefulWidget {
   final TransactionViewModel transactionVM;
-  const CategoryListScreen({super.key, required this.transactionVM});
+  final String userId;
 
-  void _showAddCategoryDialog(BuildContext context, [Category? category]) {
+  const WalletListScreen({super.key, required this.transactionVM, required this.userId});
+
+  @override
+  State<WalletListScreen> createState() => _WalletListScreenState();
+}
+
+class _WalletListScreenState extends State<WalletListScreen> {
+  void _showAddWalletSheet([Wallet? wallet]) {
     showModalBottomSheet(
       context: context,
       isScrollControlled: true,
@@ -17,7 +25,11 @@ class CategoryListScreen extends StatelessWidget {
       shape: const RoundedRectangleBorder(
         borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
       ),
-      builder: (_) => _AddCategorySheet(transactionVM: transactionVM, categoryToEdit: category),
+      builder: (_) => _AddWalletSheet(
+        transactionVM: widget.transactionVM,
+        userId: widget.userId,
+        walletToEdit: wallet,
+      ),
     );
   }
 
@@ -27,7 +39,7 @@ class CategoryListScreen extends StatelessWidget {
       body: CustomScrollView(
         slivers: [
           SliverAppBar(
-            title: const Text('Categories', style: TextStyle(fontSize: 28, fontWeight: FontWeight.bold, letterSpacing: -1.0)),
+            title: const Text('Wallets', style: TextStyle(fontSize: 28, fontWeight: FontWeight.bold, letterSpacing: -1.0)),
             pinned: true,
             centerTitle: false,
           ),
@@ -35,14 +47,20 @@ class CategoryListScreen extends StatelessWidget {
             child: Padding(
               padding: const EdgeInsets.only(bottom: 80, top: 16),
               child: ListenableBuilder(
-                listenable: transactionVM,
+                listenable: widget.transactionVM,
                 builder: (context, _) {
-                  final categories = transactionVM.categories;
-                  
-                  if (categories.isEmpty) {
-                    return const Center(child: Text('No categories found.'));
+                  final wallets = widget.transactionVM.wallets;
+                  if (wallets.isEmpty) {
+                    return const Padding(
+                      padding: EdgeInsets.only(top: 40),
+                      child: EmptyState(
+                        icon: CupertinoIcons.briefcase_fill,
+                        title: 'No Wallets',
+                        message: 'Add a wallet to start tracking your balances.',
+                      ),
+                    );
                   }
-
+                  
                   return Container(
                     margin: const EdgeInsets.symmetric(horizontal: 20),
                     clipBehavior: Clip.antiAlias,
@@ -52,27 +70,27 @@ class CategoryListScreen extends StatelessWidget {
                       border: Border.all(color: Theme.of(context).colorScheme.surfaceContainerHighest.withValues(alpha: 0.5)),
                     ),
                     child: Column(
-                      children: categories.asMap().entries.map((entry) {
+                      children: wallets.asMap().entries.map((entry) {
                         final index = entry.key;
-                        final c = entry.value;
+                        final wallet = entry.value;
 
                         return Column(
                           children: [
                             Dismissible(
-                              key: ValueKey(c.id),
+                              key: ValueKey(wallet.id),
                               direction: DismissDirection.endToStart,
                               background: Container(
-                                color: Theme.of(context).colorScheme.error,
+                                color: AppColors.expense,
                                 alignment: Alignment.centerRight,
-                                padding: const EdgeInsets.only(right: 24),
-                                child: const Icon(CupertinoIcons.trash, color: Colors.white),
+                                padding: const EdgeInsets.only(right: 20),
+                                child: const Icon(CupertinoIcons.delete, color: Colors.white),
                               ),
                               confirmDismiss: (_) async {
                                 final confirm = await showCupertinoDialog<bool>(
                                   context: context,
                                   builder: (ctx) => CupertinoAlertDialog(
-                                    title: const Text('Delete Category?'),
-                                    content: const Text('Are you sure you want to delete this category?'),
+                                    title: const Text('Delete Wallet?'),
+                                    content: const Text('Are you sure you want to delete this wallet?'),
                                     actions: [
                                       CupertinoDialogAction(
                                         child: const Text('Cancel'),
@@ -88,16 +106,16 @@ class CategoryListScreen extends StatelessWidget {
                                 );
                                 if (confirm != true) return false;
 
-                                final success = await transactionVM.deleteCategory(c.id);
+                                final deleted = await widget.transactionVM.deleteWallet(wallet.id);
                                 if (context.mounted) {
-                                  if (!success) {
+                                  if (!deleted) {
                                     ScaffoldMessenger.of(context).showSnackBar(
                                       SnackBar(
                                         content: const Row(
                                           children: [
                                             Icon(CupertinoIcons.exclamationmark_triangle_fill, color: Colors.white, size: 20),
                                             SizedBox(width: 12),
-                                            Expanded(child: Text('Cannot delete category: It is currently in use.', style: TextStyle(color: Colors.white, fontWeight: FontWeight.w600))),
+                                            Expanded(child: Text('Cannot delete wallet: It is currently in use.', style: TextStyle(color: Colors.white, fontWeight: FontWeight.w600))),
                                           ],
                                         ),
                                         backgroundColor: Theme.of(context).colorScheme.error,
@@ -115,7 +133,7 @@ class CategoryListScreen extends StatelessWidget {
                                           children: [
                                             const Icon(CupertinoIcons.trash_fill, color: Colors.white, size: 20),
                                             const SizedBox(width: 12),
-                                            Expanded(child: Text('Category "${c.name}" deleted', style: const TextStyle(color: Colors.white, fontWeight: FontWeight.w600))),
+                                            Expanded(child: Text('Wallet "${wallet.name}" deleted', style: const TextStyle(color: Colors.white, fontWeight: FontWeight.w600))),
                                           ],
                                         ),
                                         backgroundColor: Theme.of(context).colorScheme.secondary,
@@ -128,16 +146,28 @@ class CategoryListScreen extends StatelessWidget {
                                     );
                                   }
                                 }
-                                return success;
+                                return deleted;
                               },
                               child: ListTile(
-                                leading: CategoryIcon(icon: c.icon, type: c.type, colorHex: c.colorHex),
-                                title: Text(c.name, style: const TextStyle(fontWeight: FontWeight.w500)),
-                                trailing: Text(c.type.label, style: const TextStyle(color: Colors.grey, fontSize: 13)),
-                                onTap: () => _showAddCategoryDialog(context, c),
+                                leading: Container(
+                                  width: 40,
+                                  height: 40,
+                                  decoration: BoxDecoration(
+                                    color: Theme.of(context).colorScheme.surfaceContainerHighest.withValues(alpha: 0.5),
+                                    borderRadius: BorderRadius.circular(12),
+                                  ),
+                                  alignment: Alignment.center,
+                                  child: Icon(CategoryIcon.availableIcons[wallet.icon] ?? CupertinoIcons.briefcase_fill, size: 24, color: Theme.of(context).colorScheme.primary),
+                                ),
+                                title: Text(wallet.name, style: const TextStyle(fontWeight: FontWeight.w500)),
+                                subtitle: Text(
+                                  'Initial: ${widget.transactionVM.settings.currencySymbol}${wallet.initialBalance.toStringAsFixed(2)}',
+                                  style: TextStyle(color: Theme.of(context).colorScheme.onSurfaceVariant, fontSize: 13),
+                                ),
+                                onTap: () => _showAddWalletSheet(wallet),
                               ),
                             ),
-                            if (index < categories.length - 1)
+                            if (index < wallets.length - 1)
                               Divider(
                                 height: 1,
                                 indent: 72,
@@ -155,7 +185,7 @@ class CategoryListScreen extends StatelessWidget {
         ],
       ),
       floatingActionButton: FloatingActionButton(
-        onPressed: () => _showAddCategoryDialog(context),
+        onPressed: _showAddWalletSheet,
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
         child: const Icon(CupertinoIcons.add),
       ),
@@ -163,56 +193,56 @@ class CategoryListScreen extends StatelessWidget {
   }
 }
 
-class _AddCategorySheet extends StatefulWidget {
+class _AddWalletSheet extends StatefulWidget {
   final TransactionViewModel transactionVM;
-  final Category? categoryToEdit;
+  final String userId;
+  final Wallet? walletToEdit;
 
-  const _AddCategorySheet({required this.transactionVM, this.categoryToEdit});
+  const _AddWalletSheet({required this.transactionVM, required this.userId, this.walletToEdit});
 
   @override
-  State<_AddCategorySheet> createState() => _AddCategorySheetState();
+  State<_AddWalletSheet> createState() => _AddWalletSheetState();
 }
 
-class _AddCategorySheetState extends State<_AddCategorySheet> {
+class _AddWalletSheetState extends State<_AddWalletSheet> {
   final _nameCtrl = TextEditingController();
-  TransactionType _type = TransactionType.expense;
-  
-  static final _icons = CategoryIcon.availableIcons.keys.toList();
-  static const _colors = ['#F44336', '#E91E63', '#9C27B0', '#673AB7', '#3F51B5', '#2196F3', '#03A9F4', '#00BCD4', '#009688', '#4CAF50', '#8BC34A', '#CDDC39', '#FFEB3B', '#FF9800', '#FF5722', '#795548', '#9E9E9E', '#607D8B'];
-  
-  String _selectedIcon = 'food';
-  String _selectedColor = '#F44336';
+  final _balanceCtrl = TextEditingController();
+  String _selectedIcon = 'money';
+  static const _icons = ['money', 'cart', 'home', 'box', 'gift', 'airplane', 'car'];
 
   @override
   void initState() {
     super.initState();
-    if (widget.categoryToEdit != null) {
-      _nameCtrl.text = widget.categoryToEdit!.name;
-      _type = widget.categoryToEdit!.type;
-      _selectedIcon = widget.categoryToEdit!.icon;
-      if (widget.categoryToEdit!.colorHex != null) {
-        _selectedColor = widget.categoryToEdit!.colorHex!;
-      }
+    if (widget.walletToEdit != null) {
+      _nameCtrl.text = widget.walletToEdit!.name;
+      _balanceCtrl.text = widget.walletToEdit!.initialBalance.toStringAsFixed(2);
+      _selectedIcon = widget.walletToEdit!.icon;
     }
   }
 
   Future<void> _save() async {
     final name = _nameCtrl.text.trim();
+    final balance = double.tryParse(_balanceCtrl.text.trim()) ?? 0.0;
+
     if (name.isEmpty) return;
-    
-    final userId = FirebaseAuth.instance.currentUser!.uid;
-    final isEditing = widget.categoryToEdit != null;
+
+    final isEditing = widget.walletToEdit != null;
 
     if (isEditing) {
-      final updated = widget.categoryToEdit!.copyWith(
+      final updated = widget.walletToEdit!.copyWith(
         name: name,
         icon: _selectedIcon,
-        type: _type,
-        colorHex: _selectedColor,
+        initialBalance: balance,
       );
-      await widget.transactionVM.updateCategory(updated);
+      await widget.transactionVM.updateWallet(updated);
     } else {
-      await widget.transactionVM.addCategory(userId, name, _selectedIcon, _type, colorHex: _selectedColor);
+      await widget.transactionVM.addWallet(Wallet(
+        id: '',
+        userId: widget.userId,
+        name: name,
+        icon: _selectedIcon,
+        initialBalance: balance,
+      ));
     }
     
     if (mounted) {
@@ -223,7 +253,7 @@ class _AddCategorySheetState extends State<_AddCategorySheet> {
             children: [
               const Icon(CupertinoIcons.checkmark_circle_fill, color: Colors.white, size: 20),
               const SizedBox(width: 12),
-              Expanded(child: Text('Category "$name" ${isEditing ? 'updated' : 'added'} successfully!', style: const TextStyle(color: Colors.white, fontWeight: FontWeight.w600))),
+              Expanded(child: Text('Wallet "$name" ${isEditing ? 'updated' : 'added'} successfully!', style: const TextStyle(color: Colors.white, fontWeight: FontWeight.w600))),
             ],
           ),
           backgroundColor: Theme.of(context).colorScheme.primary,
@@ -258,7 +288,7 @@ class _AddCategorySheetState extends State<_AddCategorySheet> {
                 label: const Text('Cancel'),
                 style: TextButton.styleFrom(foregroundColor: Theme.of(context).colorScheme.onSurfaceVariant),
               ),
-              Text(widget.categoryToEdit == null ? 'Add Category' : 'Edit Category', style: const TextStyle(fontSize: 18, fontWeight: FontWeight.w600)),
+              Text(widget.walletToEdit == null ? 'Add Wallet' : 'Edit Wallet', style: const TextStyle(fontSize: 18, fontWeight: FontWeight.w600)),
               TextButton.icon(
                 onPressed: _save,
                 icon: const Icon(CupertinoIcons.checkmark_alt, size: 20),
@@ -266,37 +296,61 @@ class _AddCategorySheetState extends State<_AddCategorySheet> {
               ),
             ],
           ),
-          const SizedBox(height: 24),
-          CupertinoSlidingSegmentedControl<TransactionType>(
-            groupValue: _type,
-            backgroundColor: Theme.of(context).colorScheme.surfaceContainerHighest.withValues(alpha: 0.5),
-            thumbColor: Theme.of(context).colorScheme.surface,
-            children: const {
-              TransactionType.expense: Padding(padding: EdgeInsets.symmetric(horizontal: 16, vertical: 8), child: Text('Expense')),
-              TransactionType.income: Padding(padding: EdgeInsets.symmetric(horizontal: 16, vertical: 8), child: Text('Income')),
-            },
-            onValueChanged: (val) {
-              if (val != null) setState(() => _type = val);
-            },
+          const SizedBox(height: 32),
+          TextField(
+            controller: _balanceCtrl,
+            keyboardType: const TextInputType.numberWithOptions(decimal: true),
+            textAlign: TextAlign.center,
+            decoration: InputDecoration(
+              hintText: '0.00',
+              prefixText: '${widget.transactionVM.settings.currencySymbol}',
+              prefixStyle: TextStyle(fontSize: 24, color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.5)),
+              border: InputBorder.none,
+              filled: true,
+              fillColor: Colors.transparent,
+            ),
+            style: const TextStyle(fontSize: 56, fontWeight: FontWeight.bold, letterSpacing: -2.0),
           ),
-          const SizedBox(height: 24),
-          Row(
-            children: [
-              CategoryIcon(icon: _selectedIcon, type: _type, colorHex: _selectedColor),
-              const SizedBox(width: 16),
-              Expanded(
-                child: TextField(
-                  controller: _nameCtrl,
-                  decoration: InputDecoration(
-                    hintText: 'Category Name',
-                    border: OutlineInputBorder(borderRadius: BorderRadius.circular(12), borderSide: BorderSide.none),
-                    filled: true,
-                    fillColor: Theme.of(context).colorScheme.surfaceContainerHighest.withValues(alpha: 0.3),
-                    contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 16),
+          const SizedBox(height: 16),
+          const Text(
+            'Initial Balance',
+            textAlign: TextAlign.center,
+            style: TextStyle(fontSize: 14, color: Colors.grey),
+          ),
+          const SizedBox(height: 32),
+          Container(
+            decoration: BoxDecoration(
+              color: Theme.of(context).colorScheme.surfaceContainerHighest.withValues(alpha: 0.3),
+              borderRadius: BorderRadius.circular(16),
+            ),
+            padding: const EdgeInsets.all(16),
+            child: Row(
+              children: [
+                Container(
+                  width: 64,
+                  height: 64,
+                  alignment: Alignment.center,
+                  decoration: BoxDecoration(
+                    color: Theme.of(context).colorScheme.surfaceContainerHighest.withValues(alpha: 0.3),
+                    borderRadius: BorderRadius.circular(12),
+                  ),
+                  child: Icon(CategoryIcon.availableIcons[_selectedIcon], size: 32, color: Theme.of(context).colorScheme.onSurface),
+                ),
+                const SizedBox(width: 16),
+                Expanded(
+                  child: TextField(
+                    controller: _nameCtrl,
+                    decoration: InputDecoration(
+                      hintText: 'Wallet Name',
+                      border: OutlineInputBorder(borderRadius: BorderRadius.circular(12), borderSide: BorderSide.none),
+                      filled: true,
+                      fillColor: Theme.of(context).colorScheme.surfaceContainerHighest.withValues(alpha: 0.3),
+                      contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 16),
+                    ),
                   ),
                 ),
-              ),
-            ],
+              ],
+            ),
           ),
           const SizedBox(height: 24),
           const Text('Icon', style: TextStyle(fontWeight: FontWeight.w600)),
@@ -327,32 +381,6 @@ class _AddCategorySheetState extends State<_AddCategorySheet> {
             ),
           ),
           const SizedBox(height: 24),
-          const Text('Color', style: TextStyle(fontWeight: FontWeight.w600)),
-          const SizedBox(height: 8),
-          SizedBox(
-            height: 40,
-            child: ListView.builder(
-              scrollDirection: Axis.horizontal,
-              itemCount: _colors.length,
-              itemBuilder: (context, index) {
-                final colorHex = _colors[index];
-                final color = Color(int.parse(colorHex.replaceFirst('#', '0xFF')));
-                final isSelected = colorHex == _selectedColor;
-                return GestureDetector(
-                  onTap: () => setState(() => _selectedColor = colorHex),
-                  child: Container(
-                    margin: const EdgeInsets.only(right: 12),
-                    width: 40,
-                    decoration: BoxDecoration(
-                      color: color,
-                      shape: BoxShape.circle,
-                      border: isSelected ? Border.all(color: Theme.of(context).colorScheme.onSurface, width: 3) : null,
-                    ),
-                  ),
-                );
-              },
-            ),
-          ),
         ],
       ),
       ),

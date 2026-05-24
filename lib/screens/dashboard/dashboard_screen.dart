@@ -6,6 +6,7 @@ import '../../widgets/transaction_tile.dart';
 import '../../widgets/empty_state.dart';
 import '../transactions/add_transaction_sheet.dart';
 import '../../models/models.dart';
+import '../../widgets/category_icon.dart';
 
 class DashboardScreen extends StatelessWidget {
   final TransactionViewModel transactionVM;
@@ -25,98 +26,204 @@ class DashboardScreen extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return ListenableBuilder(
-      listenable: transactionVM,
-      builder: (context, _) {
-        if (transactionVM.isLoading && transactionVM.transactions.isEmpty) {
-          return const Center(child: CircularProgressIndicator());
-        }
-        
-        final recents = transactionVM.recentTransactions;
-        final currency = transactionVM.settings.currencySymbol;
+    return Scaffold(
+      floatingActionButton: FloatingActionButton(
+        onPressed: () => _showAddSheet(context),
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+        child: const Icon(CupertinoIcons.add),
+      ),
+      body: ListenableBuilder(
+        listenable: transactionVM,
+        builder: (context, _) {
+          if (transactionVM.isLoading && transactionVM.transactions.isEmpty) {
+            return const Center(child: CircularProgressIndicator());
+          }
+          
+          final recents = transactionVM.recentTransactions;
+          final currency = transactionVM.settings.currencySymbol;
 
-        return Scaffold(
-          appBar: AppBar(
-            title: const Text('Dashboard'),
-          ),
-          body: ListView(
-            padding: const EdgeInsets.only(bottom: 80),
-            children: [
-              BalanceCard(
-                balance: transactionVM.balance,
-                currencySymbol: currency,
+          return CustomScrollView(
+            slivers: [
+              SliverAppBar(
+                title: const Text('Dashboard', style: TextStyle(fontSize: 28, fontWeight: FontWeight.bold, letterSpacing: -1.0)),
+                pinned: true,
+                centerTitle: false,
               ),
-              Padding(
-                padding: const EdgeInsets.symmetric(horizontal: 24.0, vertical: 8.0),
-                child: Row(
-                  children: [
-                    Expanded(
-                      child: _SummaryBox(
-                        title: 'Income',
-                        amount: transactionVM.totalIncome,
+              SliverToBoxAdapter(
+                child: Padding(
+                  padding: const EdgeInsets.only(bottom: 40),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.stretch,
+                    children: [
+                      BalanceCard(
+                        balance: transactionVM.balance,
                         currencySymbol: currency,
-                        type: TransactionType.income,
                       ),
-                    ),
-                    const SizedBox(width: 16),
-                    Expanded(
-                      child: _SummaryBox(
-                        title: 'Expense',
-                        amount: transactionVM.totalExpense,
-                        currencySymbol: currency,
-                        type: TransactionType.expense,
+                      Padding(
+                        padding: const EdgeInsets.symmetric(horizontal: 20.0, vertical: 8.0),
+                        child: Row(
+                          children: [
+                            Expanded(
+                              child: _SummaryBox(
+                                title: 'Income',
+                                amount: transactionVM.totalIncome,
+                                currencySymbol: currency,
+                                type: TransactionType.income,
+                              ),
+                            ),
+                            const SizedBox(width: 16),
+                            Expanded(
+                              child: _SummaryBox(
+                                title: 'Expense',
+                                amount: transactionVM.totalExpense,
+                                currencySymbol: currency,
+                                type: TransactionType.expense,
+                              ),
+                            ),
+                          ],
+                        ),
                       ),
-                    ),
-                  ],
+                      if (transactionVM.wallets.isNotEmpty) ...[
+                        const Padding(
+                          padding: EdgeInsets.fromLTRB(24, 24, 24, 12),
+                          child: Text(
+                            'Wallets',
+                            style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold, letterSpacing: -0.5),
+                          ),
+                        ),
+                        SizedBox(
+                          height: 110,
+                          child: ListView.builder(
+                            scrollDirection: Axis.horizontal,
+                            padding: const EdgeInsets.symmetric(horizontal: 16),
+                            itemCount: transactionVM.wallets.length,
+                            itemBuilder: (context, index) {
+                              final wallet = transactionVM.wallets[index];
+                              final bal = transactionVM.getWalletBalance(wallet);
+                              return Container(
+                                width: 150,
+                                margin: const EdgeInsets.symmetric(horizontal: 8),
+                                padding: const EdgeInsets.all(16),
+                                decoration: BoxDecoration(
+                                  color: Theme.of(context).colorScheme.surfaceContainerHighest.withValues(alpha: 0.5),
+                                  borderRadius: BorderRadius.circular(20),
+                                ),
+                                child: Column(
+                                  crossAxisAlignment: CrossAxisAlignment.start,
+                                  mainAxisAlignment: MainAxisAlignment.center,
+                                  children: [
+                                    Row(
+                                      children: [
+                                        Container(
+                                          padding: const EdgeInsets.all(8),
+                                          decoration: BoxDecoration(
+                                            color: Theme.of(context).colorScheme.surface,
+                                            shape: BoxShape.circle,
+                                          ),
+                                          child: Icon(
+                                            CategoryIcon.availableIcons[wallet.icon] ?? CupertinoIcons.briefcase_fill,
+                                            size: 16,
+                                            color: Theme.of(context).colorScheme.primary,
+                                          ),
+                                        ),
+                                        const SizedBox(width: 12),
+                                        Expanded(
+                                          child: Text(
+                                            wallet.name,
+                                            style: TextStyle(
+                                              color: Theme.of(context).colorScheme.onSurfaceVariant,
+                                              fontSize: 14,
+                                              fontWeight: FontWeight.w600,
+                                            ),
+                                            maxLines: 1,
+                                            overflow: TextOverflow.ellipsis,
+                                          ),
+                                        ),
+                                      ],
+                                    ),
+                                    const Spacer(),
+                                    Text(
+                                      '$currency${bal.toStringAsFixed(2)}',
+                                      style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 18, letterSpacing: -0.5),
+                                    ),
+                                  ],
+                                ),
+                              );
+                            },
+                          ),
+                        ),
+                      ],
+                      const Padding(
+                        padding: EdgeInsets.fromLTRB(24, 32, 24, 12),
+                        child: Text(
+                          'Recent Transactions',
+                          style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold, letterSpacing: -0.5),
+                        ),
+                      ),
+                      if (recents.isEmpty)
+                        const EmptyState(
+                          icon: CupertinoIcons.list_dash,
+                          title: 'No Transactions Yet',
+                          message: 'Tap the + button to add your first transaction.',
+                        )
+                      else
+                        Container(
+                          margin: const EdgeInsets.symmetric(horizontal: 20),
+                          clipBehavior: Clip.antiAlias,
+                          decoration: BoxDecoration(
+                            color: Theme.of(context).colorScheme.surface,
+                            borderRadius: BorderRadius.circular(20),
+                            border: Border.all(color: Theme.of(context).colorScheme.surfaceContainerHighest.withValues(alpha: 0.5)),
+                          ),
+                          child: Column(
+                            children: recents.asMap().entries.map((entry) {
+                              final index = entry.key;
+                              final t = entry.value;
+                              final category = transactionVM.categories.firstWhere(
+                                (c) => c.id == t.categoryId,
+                                orElse: () => Category(id: '', userId: '', name: 'Unknown', icon: '?', type: t.type),
+                              );
+                              
+                              return Column(
+                                children: [
+                                  TransactionTile(
+                                    transaction: t,
+                                    category: category,
+                                    currencySymbol: currency,
+                                    onTap: () {
+                                      showModalBottomSheet(
+                                        context: context,
+                                        isScrollControlled: true,
+                                        useSafeArea: true,
+                                        shape: const RoundedRectangleBorder(
+                                          borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
+                                        ),
+                                        builder: (_) => AddTransactionSheet(
+                                          transactionVM: transactionVM,
+                                          transactionToEdit: t,
+                                        ),
+                                      );
+                                    },
+                                  ),
+                                  if (index < recents.length - 1)
+                                    Divider(
+                                      height: 1, 
+                                      indent: 64, 
+                                      color: Theme.of(context).colorScheme.surfaceContainerHighest.withValues(alpha: 0.5)
+                                    ),
+                                ],
+                              );
+                            }).toList(),
+                          ),
+                        ),
+                    ],
+                  ),
                 ),
               ),
-              const Padding(
-                padding: EdgeInsets.fromLTRB(24, 24, 24, 8),
-                child: Text(
-                  'Recent Transactions',
-                  style: TextStyle(fontSize: 18, fontWeight: FontWeight.w600),
-                ),
-              ),
-              if (recents.isEmpty)
-                const EmptyState(
-                  icon: CupertinoIcons.list_dash,
-                  title: 'No Transactions Yet',
-                  message: 'Tap the + button to add your first transaction.',
-                )
-              else
-                ...recents.map((t) {
-                  final category = transactionVM.categories.firstWhere(
-                    (c) => c.id == t.categoryId,
-                    orElse: () => Category(id: '', userId: '', name: 'Unknown', icon: '?', type: t.type),
-                  );
-                  return TransactionTile(
-                    transaction: t,
-                    category: category,
-                    currencySymbol: currency,
-                    onTap: () {
-                      showModalBottomSheet(
-                        context: context,
-                        isScrollControlled: true,
-                        useSafeArea: true,
-                        shape: const RoundedRectangleBorder(
-                          borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
-                        ),
-                        builder: (_) => AddTransactionSheet(
-                          transactionVM: transactionVM,
-                          transactionToEdit: t,
-                        ),
-                      );
-                    },
-                  );
-                }),
             ],
-          ),
-          floatingActionButton: FloatingActionButton(
-            onPressed: () => _showAddSheet(context),
-            child: const Icon(CupertinoIcons.add),
-          ),
-        );
-      },
+          );
+        },
+      ),
     );
   }
 }
@@ -140,13 +247,16 @@ class _SummaryBox extends StatelessWidget {
     final color = type == TransactionType.income
         ? (isDark ? const Color(0xFF4ADE80) : const Color(0xFF16A34A))
         : (isDark ? const Color(0xFFF87171) : const Color(0xFFDC2626));
+        
+    final bgColor = type == TransactionType.income
+        ? (isDark ? const Color(0xFF4ADE80).withValues(alpha: 0.15) : const Color(0xFF16A34A).withValues(alpha: 0.1))
+        : (isDark ? const Color(0xFFF87171).withValues(alpha: 0.15) : const Color(0xFFDC2626).withValues(alpha: 0.1));
 
     return Container(
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
-        color: Theme.of(context).colorScheme.surface,
-        borderRadius: BorderRadius.circular(16),
-        border: Border.all(color: Theme.of(context).colorScheme.outline),
+        color: bgColor,
+        borderRadius: BorderRadius.circular(20),
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -158,20 +268,26 @@ class _SummaryBox extends StatelessWidget {
                 size: 16,
                 color: color,
               ),
-              const SizedBox(width: 4),
+              const SizedBox(width: 6),
               Text(
                 title,
                 style: TextStyle(
-                  color: Theme.of(context).colorScheme.onSurfaceVariant,
-                  fontSize: 13,
+                  color: color,
+                  fontWeight: FontWeight.w600,
+                  fontSize: 14,
                 ),
               ),
             ],
           ),
-          const SizedBox(height: 8),
+          const SizedBox(height: 12),
           Text(
             '$currencySymbol${amount.toStringAsFixed(2)}',
-            style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 16),
+            style: TextStyle(
+              fontWeight: FontWeight.bold, 
+              fontSize: 20, 
+              letterSpacing: -0.5,
+              color: color,
+            ),
           ),
         ],
       ),

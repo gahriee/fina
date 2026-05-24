@@ -36,31 +36,48 @@ class _MainScreenState extends State<MainScreen> {
           SettingsScreen(transactionVM: widget.transactionVM, authVM: widget.authVM),
         ],
       ),
-      bottomNavigationBar: NavigationBar(
-        selectedIndex: _currentIndex,
-        onDestinationSelected: (index) {
-          setState(() {
-            _currentIndex = index;
-          });
-        },
-        destinations: const [
-          NavigationDestination(
-            icon: Icon(CupertinoIcons.square_grid_2x2),
-            label: 'Dashboard',
+      bottomNavigationBar: Container(
+        decoration: BoxDecoration(
+          border: Border(
+            top: BorderSide(
+              color: Theme.of(context).colorScheme.surfaceContainerHighest.withValues(alpha: 0.5),
+              width: 0.5,
+            ),
           ),
-          NavigationDestination(
-            icon: Icon(CupertinoIcons.list_bullet),
-            label: 'Transactions',
-          ),
-          NavigationDestination(
-            icon: Icon(CupertinoIcons.chart_pie),
-            label: 'Reports',
-          ),
-          NavigationDestination(
-            icon: Icon(CupertinoIcons.settings),
-            label: 'Settings',
-          ),
-        ],
+        ),
+        child: CupertinoTabBar(
+          currentIndex: _currentIndex,
+          onTap: (index) {
+            setState(() {
+              _currentIndex = index;
+            });
+          },
+          backgroundColor: Theme.of(context).colorScheme.surface.withValues(alpha: 0.85),
+          activeColor: Theme.of(context).colorScheme.primary,
+          inactiveColor: Colors.grey,
+          border: null, 
+          items: const [
+            BottomNavigationBarItem(
+              icon: Icon(CupertinoIcons.square_grid_2x2),
+              activeIcon: Icon(CupertinoIcons.square_grid_2x2_fill),
+              label: 'Dashboard',
+            ),
+            BottomNavigationBarItem(
+              icon: Icon(CupertinoIcons.list_bullet),
+              label: 'Transactions',
+            ),
+            BottomNavigationBarItem(
+              icon: Icon(CupertinoIcons.chart_pie),
+              activeIcon: Icon(CupertinoIcons.chart_pie_fill),
+              label: 'Reports',
+            ),
+            BottomNavigationBarItem(
+              icon: Icon(CupertinoIcons.settings),
+              activeIcon: Icon(CupertinoIcons.settings_solid),
+              label: 'Settings',
+            ),
+          ],
+        ),
       ),
     );
   }
