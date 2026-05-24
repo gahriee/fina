@@ -7,17 +7,22 @@ import UIKit
     _ application: UIApplication,
     didFinishLaunchingWithOptions launchOptions: [UIApplication.LaunchOptionsKey: Any]?
   ) -> Bool {
-    let controller : FlutterViewController = window?.rootViewController as! FlutterViewController
+    let registrar = self.registrar(forPlugin: "com.fina.export")!
     let exportChannel = FlutterMethodChannel(name: "com.fina.export",
-                                              binaryMessenger: controller.binaryMessenger)
+                                              binaryMessenger: registrar.messenger())
     exportChannel.setMethodCallHandler({
-      (call: FlutterMethodCall, result: @escaping FlutterResult) -> Void in
+      [weak self] (call: FlutterMethodCall, result: @escaping FlutterResult) -> Void in
       if call.method == "shareCsv" {
         if let args = call.arguments as? [String: Any],
            let csvContent = args["csvContent"] as? String,
            let filename = args["filename"] as? String {
-          self.shareCsv(content: csvContent, filename: filename, controller: controller)
-          result(nil)
+          
+          if let controller = self?.window?.rootViewController {
+            self?.shareCsv(content: csvContent, filename: filename, controller: controller)
+            result(nil)
+          } else {
+            result(FlutterError(code: "NO_CONTROLLER", message: "Could not find root view controller", details: nil))
+          }
         } else {
           result(FlutterError(code: "INVALID_ARGUMENTS", message: "Missing arguments", details: nil))
         }
