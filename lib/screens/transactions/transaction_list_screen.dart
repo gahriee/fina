@@ -131,7 +131,7 @@ class _TransactionListScreenState extends State<TransactionListScreen> {
                                             Expanded(child: Text('Transaction deleted', style: TextStyle(color: Colors.white, fontWeight: FontWeight.w600))),
                                           ],
                                         ),
-                                        backgroundColor: Theme.of(context).colorScheme.secondary,
+                                        backgroundColor: Theme.of(context).colorScheme.primary,
                                         behavior: SnackBarBehavior.floating,
                                         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
                                         margin: const EdgeInsets.all(20),
