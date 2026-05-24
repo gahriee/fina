@@ -69,6 +69,14 @@ class TransactionViewModel extends ChangeNotifier {
     });
   }
 
+  Future<void> refresh() async {
+    if (_currentUserId == null) return;
+    final uid = _currentUserId!;
+    _currentUserId = null;
+    listen(uid);
+    await Future.delayed(const Duration(milliseconds: 800));
+  }
+
   void clear() {
     _currentUserId = null;
     _txSub?.cancel();

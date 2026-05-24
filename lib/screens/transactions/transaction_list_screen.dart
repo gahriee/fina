@@ -44,8 +44,11 @@ class _TransactionListScreenState extends State<TransactionListScreen> {
         }).toList();
 
         return Scaffold(
-          body: CustomScrollView(
-            slivers: [
+          body: RefreshIndicator(
+            onRefresh: widget.transactionVM.refresh,
+            child: CustomScrollView(
+              physics: const AlwaysScrollableScrollPhysics(),
+              slivers: [
               SliverAppBar(
                 title: const Text('Transactions', style: TextStyle(fontSize: 28, fontWeight: FontWeight.bold, letterSpacing: -1.0)),
                 pinned: true,
@@ -184,6 +187,7 @@ class _TransactionListScreenState extends State<TransactionListScreen> {
                     ),
                   ),
             ],
+          ),
           ),
           floatingActionButton: FloatingActionButton(
             onPressed: () => _showAddSheet(context),

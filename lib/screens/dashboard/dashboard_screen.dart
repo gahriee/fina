@@ -42,8 +42,11 @@ class DashboardScreen extends StatelessWidget {
           final recents = transactionVM.recentTransactions;
           final currency = transactionVM.settings.currencySymbol;
 
-          return CustomScrollView(
-            slivers: [
+          return RefreshIndicator(
+            onRefresh: transactionVM.refresh,
+            child: CustomScrollView(
+              physics: const AlwaysScrollableScrollPhysics(),
+              slivers: [
               SliverAppBar(
                 title: const Text('Dashboard', style: TextStyle(fontSize: 28, fontWeight: FontWeight.bold, letterSpacing: -1.0)),
                 pinned: true,
@@ -221,6 +224,7 @@ class DashboardScreen extends StatelessWidget {
                 ),
               ),
             ],
+          ),
           );
         },
       ),

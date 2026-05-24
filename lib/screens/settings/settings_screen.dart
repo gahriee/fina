@@ -3,7 +3,6 @@ import 'package:flutter/cupertino.dart';
 import '../../viewmodels/transaction_viewmodel.dart';
 import '../../viewmodels/auth_viewmodel.dart';
 import '../../models/models.dart';
-import '../../services/export_service.dart';
 import 'category_list_screen.dart';
 import 'wallet_list_screen.dart';
 
@@ -23,8 +22,6 @@ class SettingsScreen extends StatefulWidget {
 
 class _SettingsScreenState extends State<SettingsScreen> {
   final _currencyCtrl = TextEditingController();
-  final _exportService = ExportService();
-  bool _isExporting = false;
 
   @override
   void initState() {
@@ -54,8 +51,11 @@ class _SettingsScreenState extends State<SettingsScreen> {
         final user = widget.authVM.currentUser;
 
         return Scaffold(
-          body: CustomScrollView(
-            slivers: [
+          body: RefreshIndicator(
+            onRefresh: widget.transactionVM.refresh,
+            child: CustomScrollView(
+              physics: const AlwaysScrollableScrollPhysics(),
+              slivers: [
               SliverAppBar(
                 title: const Text('Settings', style: TextStyle(fontSize: 28, fontWeight: FontWeight.bold, letterSpacing: -1.0)),
                 pinned: true,
@@ -173,19 +173,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
                               );
                             },
                           ),
-                          _buildDivider(context),
-                          ListTile(
-                            title: const Text('Export Transactions (CSV)'),
-                            trailing: _isExporting 
-                                ? const SizedBox(width: 24, height: 24, child: CircularProgressIndicator(strokeWidth: 2))
-                                : const Icon(CupertinoIcons.share, size: 18),
-                            onTap: () async {
-                              setState(() => _isExporting = true);
-                              final csv = _exportService.generateCsv(widget.transactionVM.transactions, widget.transactionVM.categories);
-                              await _exportService.shareCsv(csv, 'fina_transactions.csv');
-                              setState(() => _isExporting = false);
-                            },
-                          ),
+
                           _buildDivider(context),
                           ListTile(
                             title: const Text('Clear All Data', style: TextStyle(color: Colors.red)),
@@ -237,6 +225,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
                 ),
               ),
             ],
+          ),
           ),
         );
       },

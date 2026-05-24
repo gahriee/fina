@@ -88,8 +88,11 @@ class _ReportsScreenState extends State<ReportsScreen> {
         final currency = widget.transactionVM.settings.currencySymbol;
 
         return Scaffold(
-          body: CustomScrollView(
-            slivers: [
+          body: RefreshIndicator(
+            onRefresh: widget.transactionVM.refresh,
+            child: CustomScrollView(
+              physics: const AlwaysScrollableScrollPhysics(),
+              slivers: [
               SliverAppBar(
                 title: const Text('Reports', style: TextStyle(fontSize: 28, fontWeight: FontWeight.bold, letterSpacing: -1.0)),
                 pinned: true,
@@ -324,6 +327,7 @@ class _ReportsScreenState extends State<ReportsScreen> {
                       ),
                     ),
             ],
+          ),
           ),
         );
       },

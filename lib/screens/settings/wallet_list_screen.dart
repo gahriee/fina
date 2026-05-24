@@ -36,8 +36,11 @@ class _WalletListScreenState extends State<WalletListScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      body: CustomScrollView(
-        slivers: [
+      body: RefreshIndicator(
+        onRefresh: widget.transactionVM.refresh,
+        child: CustomScrollView(
+          physics: const AlwaysScrollableScrollPhysics(),
+          slivers: [
           SliverAppBar(
             title: const Text('Wallets', style: TextStyle(fontSize: 28, fontWeight: FontWeight.bold, letterSpacing: -1.0)),
             pinned: true,
@@ -183,6 +186,7 @@ class _WalletListScreenState extends State<WalletListScreen> {
             ),
           ),
         ],
+      ),
       ),
       floatingActionButton: FloatingActionButton(
         onPressed: _showAddWalletSheet,
