@@ -44,12 +44,7 @@ final lightTheme = ThemeData(
     foregroundColor: AppColors.textPrimary,
     elevation: 0,
   ),
-  pageTransitionsTheme: const PageTransitionsTheme(
-    builders: {
-      TargetPlatform.android: CupertinoPageTransitionsBuilder(),
-      TargetPlatform.iOS: CupertinoPageTransitionsBuilder(),
-    },
-  ),
+
   cardTheme: CardThemeData(
     color: AppColors.surface,
     elevation: 0,
@@ -101,12 +96,7 @@ final darkTheme = ThemeData(
     foregroundColor: AppColors.textPrimaryDark,
     elevation: 0,
   ),
-  pageTransitionsTheme: const PageTransitionsTheme(
-    builders: {
-      TargetPlatform.android: CupertinoPageTransitionsBuilder(),
-      TargetPlatform.iOS: CupertinoPageTransitionsBuilder(),
-    },
-  ),
+
   cardTheme: CardThemeData(
     color: AppColors.surfaceDark,
     elevation: 0,
