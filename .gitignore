@@ -43,3 +43,8 @@ app.*.map.json
 /android/app/debug
 /android/app/profile
 /android/app/release
+
+# Project Documentation
+AGENTS.md
+finance-tracker-architecture.md
+project-status.md
